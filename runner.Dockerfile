@@ -7,8 +7,8 @@ RUN apk --purge -v del py-pip
 RUN rm /var/cache/apk/*
 
 ARG TINI_VERSION=v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/local/bin/tini
-RUN chmod +x /usr/local/bin/tini
+#ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/local/bin/tini
+#RUN chmod +x /usr/local/bin/tini
 
 RUN mkdir -p /run/sshd
 EXPOSE 22
@@ -22,12 +22,17 @@ RUN curl -Lo /usr/local/bin/gitlab-runner https://gitlab-runner-downloads.s3.ama
     # like that.
     gitlab-runner --version
 
-RUN apk -Uvv add bash ca-certificates git git-lfs && \
+RUN apk -Uvv add bash ca-certificates git git-lfs tini && \
     git lfs install --skip-repo
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+RUN ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa
+RUN ssh-keygen -f /etc/ssh/ssh_host_dsa_key -N '' -t dsa
+
+RUN echo "root:Docker!" | chpasswd
 
 ENTRYPOINT ["tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
 
